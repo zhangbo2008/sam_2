@@ -19,28 +19,28 @@ class COCODataset(Dataset):
         self.image_ids = list(self.coco.imgs.keys())
 
         # Filter out image_ids without any annotations
-        self.image_ids = [image_id for image_id in self.image_ids if len(self.coco.getAnnIds(imgIds=image_id)) > 0]
+        self.image_ids = [image_id for image_id in self.image_ids if len(self.coco.getAnnIds(imgIds=image_id)) > 0] # ====只要那些带有anooation的图片数据.
 
     def __len__(self):
         return len(self.image_ids)
 
     def __getitem__(self, idx):
-        image_id = self.image_ids[idx]
+        image_id = self.image_ids[idx] #输入图片index,得到id
         image_info = self.coco.loadImgs(image_id)[0]
         image_path = os.path.join(self.root_dir, image_info['file_name'])
         image = cv2.imread(image_path)
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
 
-        ann_ids = self.coco.getAnnIds(imgIds=image_id)
+        ann_ids = self.coco.getAnnIds(imgIds=image_id)#根据id得到annotation
         anns = self.coco.loadAnns(ann_ids)
         bboxes = []
         masks = []
 
-        for ann in anns:
+        for ann in anns:#遍历标注里面的各个物品
             x, y, w, h = ann['bbox']
-            bboxes.append([x, y, x + w, y + h])
+            bboxes.append([x, y, x + w, y + h])#切换成四角模式.
             mask = self.coco.annToMask(ann)
-            masks.append(mask)
+            masks.append(mask)#添加box信息和mask信息.
 
         if self.transform:
             image, masks, bboxes = self.transform(image, masks, np.array(bboxes))
@@ -63,7 +63,7 @@ class ResizeAndPad:
         self.transform = ResizeLongestSide(target_size)
         self.to_tensor = transforms.ToTensor()
 
-    def __call__(self, image, masks, bboxes):
+    def __call__(self, image, masks, bboxes):#bboxes传入的是0-1之间的float数.
         # Resize image and masks
         og_h, og_w, _ = image.shape
         image = self.transform.apply_image(image)
@@ -72,22 +72,22 @@ class ResizeAndPad:
 
         # Pad image and masks to form a square
         _, h, w = image.shape
-        max_dim = max(w, h)
+        max_dim = max(w, h)   # 变换图片为一个正方形.
         pad_w = (max_dim - w) // 2
         pad_h = (max_dim - h) // 2
 
-        padding = (pad_w, pad_h, max_dim - w - pad_w, max_dim - h - pad_h)
-        image = transforms.Pad(padding)(image)
-        masks = [transforms.Pad(padding)(mask) for mask in masks]
+        padding = (pad_w, pad_h, max_dim - w - pad_w, max_dim - h - pad_h)#因为奇偶性,所以是max_dim - w - pad_w, max_dim - h - pad_h
+        image = transforms.Pad(padding)(image)# 图像paddign成正方形.
+        masks = [transforms.Pad(padding)(mask) for mask in masks] # makspadding成正方形.
 
         # Adjust bounding boxes
-        bboxes = self.transform.apply_boxes(bboxes, (og_h, og_w))
-        bboxes = [[bbox[0] + pad_w, bbox[1] + pad_h, bbox[2] + pad_w, bbox[3] + pad_h] for bbox in bboxes]
+        bboxes = self.transform.apply_boxes(bboxes, (og_h, og_w))#把0-1版本bbox,转化为像素值bbox.
+        bboxes = [[bbox[0] + pad_w, bbox[1] + pad_h, bbox[2] + pad_w, bbox[3] + pad_h] for bbox in bboxes]#这个地方也应该跟80行类似的变换. 先放zheli,后续改一下测测效果.
 
         return image, masks, bboxes
 
 
-def load_datasets(cfg, img_size):
+def load_datasets(cfg, img_size): #img_size表示变换后的图片大小.
     transform = ResizeAndPad(img_size)
     train = COCODataset(root_dir=cfg.dataset.train.root_dir,
                         annotation_file=cfg.dataset.train.annotation_file,

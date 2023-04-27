@@ -1,3 +1,6 @@
+# !pip install lightning
+# pip install python-box
+
 import os
 import time
 
@@ -80,6 +83,7 @@ def train_sam(
         validated = False
 
         for iter, data in enumerate(train_dataloader):
+
             if epoch > 1 and epoch % cfg.eval_interval == 0 and not validated:
                 validate(fabric, model, val_dataloader, epoch)
                 validated = True
@@ -142,7 +146,16 @@ def main(cfg: Box) -> None:
 #============定制自己的数据集.
     from box import Box
     import os
-    ppp=os.path.dirname((__file__))
+    # ppp=os.path.dirname((__file__))#这行再colab不能跑.
+    # print(ppp)
+    ppp=os.getcwd() 
+    ppp=os.path.join(ppp,'lightning_sam')
+
+
+
+
+
+
     config = {
         "num_devices": 'auto',
         "batch_size": 2,

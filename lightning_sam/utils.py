@@ -9,7 +9,7 @@ from torchvision.utils import draw_bounding_boxes
 from torchvision.utils import draw_segmentation_masks
 from tqdm import tqdm
 
-
+#这个里面做一些度量统计.
 class AverageMeter:
     """Computes and stores the average and current value."""
 

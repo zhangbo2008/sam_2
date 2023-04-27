@@ -27,23 +27,23 @@ class Model(nn.Module):
         _, _, H, W = images.shape
         image_embeddings = self.model.image_encoder(images)
         pred_masks = []
-        ious = []
-        for embedding, bbox in zip(image_embeddings, bboxes):
+        ious = []#========图像编码,然后给一个prompt: 一个点或者一个box, 然后用mask_decoder网络给出mask和iou结果.
+        for embedding, bbox in zip(image_embeddings, bboxes):#=======对于coco数据集.我们把图像跟bbox的gt喂给model,
             sparse_embeddings, dense_embeddings = self.model.prompt_encoder(
                 points=None,
                 boxes=bbox,
                 masks=None,
-            )
+            )#prompt_encoder. boxes喂入我们的box. 结果是系数编码和稠密编码
 
             low_res_masks, iou_predictions = self.model.mask_decoder(
-                image_embeddings=embedding.unsqueeze(0),
+                image_embeddings=embedding.unsqueeze(0), #我们对于每一个图像我们增加第一个维度作为batch_size
                 image_pe=self.model.prompt_encoder.get_dense_pe(),
                 sparse_prompt_embeddings=sparse_embeddings,
                 dense_prompt_embeddings=dense_embeddings,
                 multimask_output=False,
-            )#这个网络负责生成maks
+            )#这个网络负责生成maks #
 
-            masks = F.interpolate(
+            masks = F.interpolate(#=====最后把低分辨率的masks,插值得到原始图片的maks#具体里面一些参数还是要把sam代码看懂.
                 low_res_masks,
                 (H, W),
                 mode="bilinear",

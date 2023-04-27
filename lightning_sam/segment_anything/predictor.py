@@ -14,7 +14,7 @@ from typing import Optional, Tuple
 from .utils.transforms import ResizeLongestSide
 
 
-class SamPredictor:
+class SamPredictor:#把model嵌入到里面.
     def __init__(
         self,
         sam_model: Sam,
